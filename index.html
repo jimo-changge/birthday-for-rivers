@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小河今天想吃什么？</title>
+<style>
+  :root{
+    --paper:#fffdf6;
+    --ink:#5b5566;
+    --soft:#c9b8e8;
+    --soft2:#f7c9d4;
+    --soft3:#bfe3e0;
+    --glow1:#e9d8ff;
+    --glow2:#ffd9e6;
+    --glow3:#d6f0ec;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  html,body{height:100%;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    overflow-x:hidden;
+    background:
+      radial-gradient(circle at 18% 22%, var(--glow1) 0%, transparent 38%),
+      radial-gradient(circle at 82% 18%, var(--glow2) 0%, transparent 36%),
+      radial-gradient(circle at 75% 80%, var(--glow3) 0%, transparent 40%),
+      radial-gradient(circle at 20% 85%, #fff0f5 0%, transparent 40%),
+      linear-gradient(160deg,#fbf7ff 0%,#fdf6f0 50%,#f3f9fb 100%);
+    background-attachment:fixed;
+    position:relative;
+  }
+
+  /* 漂浮柔光球 */
+  .orb{
+    position:fixed;
+    border-radius:50%;
+    filter:blur(40px);
+    opacity:.5;
+    pointer-events:none;
+    z-index:0;
+    animation:float 14s ease-in-out infinite;
+  }
+  .orb.a{width:340px;height:340px;background:var(--glow1);top:-80px;left:-60px;animation-delay:0s;}
+  .orb.b{width:300px;height:300px;background:var(--glow2);top:30%;right:-80px;animation-delay:-3s;}
+  .orb.c{width:380px;height:380px;background:var(--glow3);bottom:-120px;left:25%;animation-delay:-6s;}
+
+  @keyframes float{
+    0%,100%{transform:translateY(0) translateX(0) scale(1);}
+    50%{transform:translateY(-30px) translateX(20px) scale(1.06);}
+  }
+
+  .wrap{
+    position:relative;
+    z-index:2;
+    max-width:760px;
+    margin:0 auto;
+    padding:64px 24px 80px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    transition:opacity .8s ease;
+  }
+
+  .title{
+    font-weight:600;
+    font-size:clamp(26px,5vw,40px);
+    letter-spacing:.04em;
+    text-align:center;
+    color:#6a5d80;
+    text-shadow:0 2px 18px rgba(180,150,220,.35);
+    margin-bottom:10px;
+  }
+  .subtitle{
+    font-size:14px;
+    color:#9a8fb0;
+    letter-spacing:.18em;
+    margin-bottom:46px;
+  }
+
+  .tags{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px;
+    width:100%;
+  }
+  @media(min-width:560px){
+    .tags{grid-template-columns:repeat(2,1fr);}
+  }
+
+  .tag{
+    position:relative;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    padding:18px 16px;
+    border-radius:18px;
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:.05em;
+    color:#6a5d80;
+    background:rgba(255,255,255,.55);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    box-shadow:
+      0 8px 24px rgba(170,150,200,.18),
+      inset 0 0 0 1px rgba(255,255,255,.6);
+    transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, opacity .5s, filter .5s;
+    overflow:hidden;
+  }
+  .tag:nth-child(1){background:linear-gradient(135deg,rgba(255,233,242,.7),rgba(255,255,255,.5));}
+  .tag:nth-child(2){background:linear-gradient(135deg,rgba(214,240,236,.7),rgba(255,255,255,.5));}
+  .tag:nth-child(3){background:linear-gradient(135deg,rgba(255,236,214,.7),rgba(255,255,255,.5));}
+  .tag:nth-child(4){background:linear-gradient(135deg,rgba(233,216,255,.7),rgba(255,255,255,.5));}
+
+  .tag:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(170,150,200,.28),inset 0 0 0 1px rgba(255,255,255,.7);}
+  .tag:active{transform:translateY(0) scale(.98);}
+
+  .tag.opened{
+    opacity:0;
+    transform:scale(.6) translateY(-20px);
+    filter:blur(6px);
+    pointer-events:none;
+  }
+
+  /* 标签上的小圆点提示 */
+  .tag .dot{
+    position:absolute;top:10px;right:12px;
+    width:8px;height:8px;border-radius:50%;
+    background:#e08fb0;box-shadow:0 0 8px #e08fb0;
+    opacity:.8;
+  }
+
+  /* 纸条 */
+  .notes{
+    width:100%;
+    margin-top:30px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+    position:relative;
+  }
+
+  .note{
+    position:relative;
+    background:var(--paper);
+    color:var(--ink);
+    padding:26px 26px 28px;
+    border-radius:6px;
+    line-height:1.95;
+    font-size:16.5px;
+    letter-spacing:.02em;
+    box-shadow:
+      0 12px 30px rgba(150,130,180,.18),
+      0 2px 6px rgba(150,130,180,.1);
+    transform-origin:top center;
+    opacity:0;
+    max-height:0;
+    padding-top:0;padding-bottom:0;
+    overflow:hidden;
+    transform:rotate(var(--rot,-1deg)) scale(.9);
+    transition:max-height .6s ease, opacity .5s ease, padding .5s ease, transform .55s cubic-bezier(.2,.9,.25,1.1);
+  }
+  .note.show{
+    opacity:1;
+    max-height:600px;
+    padding-top:26px;padding-bottom:28px;
+    transform:rotate(var(--rot,-1deg)) scale(1);
+  }
+  .note:nth-child(1){--rot:-1.2deg;}
+  .note:nth-child(2){--rot:1deg;}
+  .note:nth-child(3){--rot:-0.6deg;}
+  .note:nth-child(4){--rot:1.4deg;}
+
+  /* 纸条顶部胶带感 */
+  .note::before{
+    content:"";
+    position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(-2deg);
+    width:80px;height:20px;
+    background:rgba(233,216,255,.55);
+    box-shadow:0 2px 6px rgba(180,150,220,.2);
+    border-radius:2px;
+  }
+  .note .who{
+    display:block;
+    font-size:13px;
+    letter-spacing:.2em;
+    color:#b39fce;
+    margin-bottom:10px;
+  }
+
+  /* 全部展开后纸条整体淡出 */
+  .notes.gone .note{
+    opacity:0;
+    transform:scale(.92) translateY(-20px);
+    transition:opacity .9s ease, transform .9s ease;
+  }
+  .tags.gone{opacity:0;transition:opacity .8s ease;}
+  .hint{opacity:0;transition:opacity .8s ease;}
+  .hint.gone{opacity:0;}
+
+  /* 最终祝福 */
+  .final{
+    position:fixed;
+    inset:0;
+    z-index:30;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:40px;
+    opacity:0;
+    pointer-events:none;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(255,255,255,.6), transparent 60%),
+      radial-gradient(circle at 20% 80%, var(--glow1), transparent 45%),
+      radial-gradient(circle at 80% 20%, var(--glow2), transparent 45%);
+    transition:opacity 1.2s ease;
+  }
+  .final.show{opacity:1;pointer-events:auto;}
+
+  .final h1{
+    font-size:clamp(28px,6vw,46px);
+    font-weight:600;
+    color:#6a5d80;
+    letter-spacing:.06em;
+    text-shadow:0 2px 20px rgba(180,150,220,.4);
+    margin-bottom:20px;
+    line-height:1.5;
+  }
+  .final p{
+    font-size:clamp(16px,3vw,20px);
+    color:#8a7ea0;
+    letter-spacing:.08em;
+    line-height:1.9;
+  }
+  .final .sign{
+    margin-top:36px;
+    font-size:14px;
+    color:#b39fce;
+    letter-spacing:.25em;
+  }
+  .final .back-link{
+    margin-top:48px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:14px;
+    color:#9a8fb0;
+    letter-spacing:.18em;
+    padding:8px 18px;
+    border:1px solid rgba(180,159,206,.35);
+    border-radius:20px;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    background:rgba(255,255,255,.4);
+    transition:color .3s, border-color .3s, background .3s, transform .3s;
+  }
+  .final .back-link:hover{
+    color:#6a5d80;
+    border-color:rgba(180,159,206,.7);
+    background:rgba(255,255,255,.6);
+    transform:translateY(-2px);
+  }
+
+  .counter{
+    position:relative;z-index:2;
+    font-size:13px;color:#b39fce;letter-spacing:.2em;
+    margin-top:24px;height:18px;
+  }
+</style>
+</head>
+<body>
+  <div class="orb a"></div>
+  <div class="orb b"></div>
+  <div class="orb c"></div>
+
+  <main class="wrap" id="wrap">
+    <h1 class="title">小河今天想吃什么？</h1>
+    <div class="subtitle">点开每一张小纸条</div>
+
+    <section class="tags" id="tags" aria-label="选项">
+      <button class="tag" data-i="0">大排档的龙虾王<span class="dot"></span></button>
+      <button class="tag" data-i="1">不知名的小甜水<span class="dot"></span></button>
+      <button class="tag" data-i="2">一人一口烤地瓜<span class="dot"></span></button>
+      <button class="tag" data-i="3">譬如美酒加咖啡<span class="dot"></span></button>
+    </section>
+
+    <section class="notes" id="notes" aria-live="polite"></section>
+
+    <div class="counter" id="counter"></div>
+  </main>
+
+  <div class="final" id="final" role="status">
+    <h1>亲爱的小河，生日快乐。<br>愿你永远与幸福相伴，美味皆宜。</h1>
+    <p>—— 长歌</p>
+    <div class="sign">HAPPY BIRTHDAY</div>
+    <button class="back-link" id="backLink" type="button">返回查看小纸条</button>
+  </div>
+
+<script>
+  const contents = [
+    "在转角遇到爱的澳门，邂逅了林晴朗和欧阳晖，他们举着冰镇啤酒，在晚风中向你招手。",
+    "在食堂碰见了幼教专业的三个大学生，人手一杯，你也不必免俗。下课后跟廖思远一起去警局等哥嫂下班，顺道问候哥哥那群不靠谱的朋友们。雨季已经结束，今日布河阳光明媚。",
+    "许想仁和莫谦之分食一个地瓜中，见到你也同饮一杯。长空万里，乘风好去，这一世谦谦君子，仁义千古。",
+    "路过早C晚A的一家店，蛋糕很好吃，但店名实在不解其意。你听见有人把那首歌设置成单曲循环，夜色渐浓时调酒师看着小提琴手出神，原来爱是唯一的答案。"
+  ];
+
+  const tagsEl = document.getElementById('tags');
+  const notesEl = document.getElementById('notes');
+  const counterEl = document.getElementById('counter');
+  const finalEl = document.getElementById('final');
+  const wrapEl = document.getElementById('wrap');
+
+  const state = [false,false,false,false];
+  // 按点击顺序排列纸条
+  const order = [];
+
+  function updateCounter(){
+    const n = state.filter(Boolean).length;
+    counterEl.textContent = n>0 && n<4 ? `已点开 ${n} / 4` : '';
+  }
+
+  tagsEl.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.tag');
+    if(!btn) return;
+    const i = Number(btn.dataset.i);
+
+    // 可重复点击：再次点击关闭该纸条
+    if(state[i]){
+      // 关闭
+      const note = notesEl.querySelector(`[data-note="${i}"]`);
+      if(note){
+        note.classList.remove('show');
+        setTimeout(()=>{ note.remove(); }, 550);
+      }
+      state[i]=false;
+      btn.classList.remove('opened');
+      order.splice(order.indexOf(i),1);
+      updateCounter();
+      return;
+    }
+
+    // 打开：创建纸条
+    state[i]=true;
+    btn.classList.add('opened');
+    order.push(i);
+
+    const note = document.createElement('article');
+    note.className='note';
+    note.dataset.note=i;
+    note.innerHTML = `<span class="who">${btn.textContent.replace('•','').trim()}</span>${contents[i]}`;
+    notesEl.appendChild(note);
+    // 触发展开动画
+    requestAnimationFrame(()=>{
+      note.classList.add('show');
+    });
+    updateCounter();
+
+    // 全部打开：停留一段时间让用户读完最后一张纸条
+    if(state.every(Boolean)){
+      setTimeout(()=>{
+        notesEl.classList.add('gone');
+        tagsEl.classList.add('gone');
+        counterEl.textContent='';
+      }, 4500);
+      setTimeout(()=>{
+        wrapEl.style.opacity='0';
+        finalEl.classList.add('show');
+      }, 5800);
+    }
+  });
+
+  // 返回查看小纸条：回到四张纸条全部打开的状态
+  document.getElementById('backLink').addEventListener('click', ()=>{
+    finalEl.classList.remove('show');
+    setTimeout(()=>{
+      wrapEl.style.opacity='1';
+      notesEl.classList.remove('gone');
+      tagsEl.classList.remove('gone');
+    }, 400);
+  });
+</script>
+</body>
+</html>
